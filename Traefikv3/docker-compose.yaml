@@ -17,7 +17,6 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8443:8443 # for my home server 
      # - 10000:10000 # optional
      # - 33073:33073 # optional
     environment:
