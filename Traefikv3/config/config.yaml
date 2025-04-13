@@ -18,26 +18,20 @@ http:
         scheme: https
         permanent: true
 
-  routers:
-    traefik-secure:
-      rule: "Host(`traefik.${DOMAIN}`)" # Use environment variable for domain
-      entryPoints:
-        - https
-      tls:
-        certResolver: cloudflare
-        domains:
-          - main: "${DOMAIN}" # Use environment variable for domain
-            sans:
-              - "*.${DOMAIN}" # Use environment variable for wildcard subdomains
+  # routers:
+  #   portainer:
+  #     entryPoints:
+  #       - "https"
+  #     rule: "Host(`portainer.domain.com`)"
+  #     middlewares:
+  #       - default-security-headers
+  #       - https-redirectscheme
+  #     tls: {}
+  #     service: portainer
 
-tls:
-  certificatesResolvers:
-    cloudflare:
-      acme:
-        email: ${EMAIL}
-        storage: acme.json
-        dnsChallenge:
-          provider: cloudflare
-          resolvers:
-            - "1.1.1.1:53"
-            - "1.0.0.1:53"
+  # services:
+  #   portainer:
+  #     loadBalancer:
+  #       servers:
+  #         - url: "https://192.168.200.122:9443"
+  #       passHostHeader: true

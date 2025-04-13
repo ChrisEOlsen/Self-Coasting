@@ -16,12 +16,11 @@ services:
        proxy:
     ports:
       - 80:80
-      - 8443:8443 # Usually should be 443 
+      - 443:443
+      - 8443:8443 # for my home server 
+     # - 10000:10000 # optional
+     # - 33073:33073 # optional
     environment:
-      - CF_DNS_API_TOKEN=${CF_TOKEN} # Use environment variable for Cloudflare token
-      - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS} # Use environment variable for dashboard credentials
-      - DOMAIN=${DOMAIN} # Use environment variable for domain
-      - EMAIL=${EMAIL} # Use environment variable for email
       - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS}
       # - CF_API_EMAIL=your@email.com # Cloudflare email
       # - CF_DNS_API_TOKEN=YOUR-TOKEN # Cloudflare API Token
@@ -30,25 +29,25 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config/traefik.yaml:/traefik.yaml:ro
-      - ./config/acme.json:/acme.json
-      - ./config/config.yaml:/config.yaml:ro
-      - ./logs:/var/log/traefik
+      - /home/ubuntu/docker/traefik/traefik.yaml:/traefik.yaml:ro
+      - /home/ubuntu/docker/traefik/acme.json:/acme.json
+      - /home/ubuntu/docker/traefik/config.yaml:/config.yaml:ro
+      - /home/ubuntu/docker/traefik/logs:/var/log/traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.crispychrisprivserver.org`)"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik-docker.crispychrisprivserver.org`)"
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=${DOMAIN}"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.${DOMAIN}"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=crispychrisprivserver.org"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.crispychrisprivserver.org"
       - "traefik.http.routers.traefik-secure.service=api@internal"
 
 networks:
