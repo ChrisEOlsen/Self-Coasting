@@ -1,0 +1,48 @@
+services:
+  repo-watcher:
+    image: alpine:latest  # We'll use a minimal base and customize the logic
+    container_name: repo-watcher
+    volumes:
+      - ~/repos:/git                    # Repo sync destination
+      - ~/repos.json:/git/repos.json:ro # Repo config file
+      - ~/.ssh:/root/.ssh:ro            # SSH key access for Tailscale
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      apk add --no-cache openssh git jq &&
+      mkdir -p /git/clones &&
+      while true; do
+        echo "🔄 Scanning repos.json..."
+        for repo in $(jq -c '.repos[]' /git/repos.json); do
+          REPO_URL=$(echo $repo | jq -r '.url')
+          BRANCH=$(echo $repo | jq -r '.branch')
+          TARGETS=$(echo $repo | jq -r '.targets[]')
+          REPO_NAME=$(basename -s .git "$REPO_URL")
+          
+          # Clone if not present
+          if [ ! -d "/git/clones/$REPO_NAME/.git" ]; then
+            echo "📥 Cloning $REPO_NAME..."
+            git clone --branch "$BRANCH" "$REPO_URL" "/git/clones/$REPO_NAME" || continue
+          else
+            echo "📦 Pulling latest for $REPO_NAME..."
+            git -C "/git/clones/$REPO_NAME" pull origin "$BRANCH"
+          fi
+
+          # Sync to remote machines
+          for row in $(echo "$repo" | jq -c '.targets[]'); do
+            TARGET_HOST=$(echo $row | jq -r '.host')
+            TARGET_PATH=$(echo $row | jq -r '.path')
+            echo "📤 Syncing $REPO_NAME to $TARGET_HOST:$TARGET_PATH..."
+            ssh "$TARGET_HOST" "mkdir -p $TARGET_PATH && cd $TARGET_PATH && git pull origin $BRANCH" || \
+            echo "⚠️ Failed to sync $REPO_NAME to $TARGET_HOST"
+          done
+        done
+        echo "✅ Sync cycle complete. Sleeping for 60s..."
+        sleep 60
+      done
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.repo-watcher.rule=Host(`watcher.crispychrisprivserver.org`)"
+      - "traefik.http.routers.repo-watcher.entrypoints=websecure"
+      - "traefik.http.routers.repo-watcher.tls=true"
+      - "traefik.http.services.repo-watcher.loadbalancer.server.port=82"

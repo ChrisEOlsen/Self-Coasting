@@ -1,0 +1,28 @@
+{
+  "repos": [
+    {
+      "url": "git@github.com:crispychris/myrepo.git",
+      "branch": "main",
+      "targets": [
+        {
+          "host": "home-server",
+          "path": "~/projects/myrepo"
+        },
+        {
+          "host": "windows-box",
+          "path": "~/Documents/code/myrepo"
+        }
+      ]
+    },
+    {
+      "url": "git@github.com:crispychris/infra.git",
+      "branch": "main",
+      "targets": [
+        {
+          "host": "macbook-air",
+          "path": "~/devops/infra"
+        }
+      ]
+    }
+  ]
+}
