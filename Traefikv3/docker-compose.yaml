@@ -1,54 +1,88 @@
-secrets:
-  cf-token:
-    file: ./cf-token
+version: "3.8"
+
 services:
   traefik:
-    image: traefik:latest # or traefik:v3.3 to pin a version
+    image: traefik:latest
     container_name: traefik
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true # helps to increase security
-    secrets:
-      - cf-token # the secret at the top of this file
-    env_file:
-      - .env # store other secrets e.g., dashboard password
-    networks:
-       proxy:
+      - no-new-privileges:true
+    command:
+      - --api.dashboard=true
+      - --api.debug=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cloudflare.acme.email=${CF_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.0.0.1:53
+      - --serversTransport.insecureSkipVerify=true
+      - --log.level=DEBUG
+      - --log.filePath=/var/log/traefik/traefik.log
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
     ports:
-      - 80:80
-      - 443:443
-     # - 10000:10000 # optional
-     # - 33073:33073 # optional
+      - "80:80"
+      - "443:443"
     environment:
+      - CLOUDFLARE_DNS_API_TOKEN_FILE=/run/secrets/cf-token
+      - CF_EMAIL=${CF_EMAIL}
       - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS}
-      # - CF_API_EMAIL=your@email.com # Cloudflare email
-      # - CF_DNS_API_TOKEN=YOUR-TOKEN # Cloudflare API Token
-      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf-token # see https://doc.traefik.io/traefik/https/acme/#providers
-      # token file is the proper way to do it
+    secrets:
+      - cf-token
+    env_file:
+      - .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config/traefik.yaml:/traefik.yaml:ro
-      - ./config/acme.json:/acme.json
-      - ./config/config.yaml:/config.yaml:ro
       - ./logs:/var/log/traefik
+      - ./acme.json:/letsencrypt/acme.json
+    networks:
+      - proxy
     labels:
+      # HTTP router – redirects to HTTPS
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.entrypoints=web"
       - "traefik.http.routers.traefik.rule=Host(`traefik.crispychrisprivserver.org`)"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik.middlewares=redirect-to-https"
+
+      # HTTPS router – protected + full TLS config
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
       - "traefik.http.routers.traefik-secure.rule=Host(`traefik.crispychrisprivserver.org`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth,secure-headers"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
       - "traefik.http.routers.traefik-secure.tls.domains[0].main=crispychrisprivserver.org"
       - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.crispychrisprivserver.org"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+      # Middleware: Redirect HTTP → HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # Middleware: Basic Auth
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+
+      # Middleware: Secure Headers
+      - "traefik.http.middlewares.secure-headers.headers.customBrowserXSSValue=0"
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
+      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
+      - "traefik.http.middlewares.secure-headers.headers.contentSecurityPolicy=default-src 'self'"
+      - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+
+secrets:
+  cf-token:
+    file: ./cf-token
 
 networks:
   proxy:
-    external: true # or comment this line to auto create the network
+    external: true
