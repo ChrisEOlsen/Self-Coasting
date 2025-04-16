@@ -27,5 +27,7 @@ docker network create proxy
 
       # Service
       - "traefik.http.services.whoami-service.loadbalancer.server.port=81"
+    networks:
+        - proxy # important
 ```
 
