@@ -66,18 +66,23 @@ services:
 
       # Middleware: Basic Auth
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      
+      # Middleware: Basic Headers
+      - "traefik.http.middlewares.basic-secure.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.basic-secure.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.basic-secure.headers.frameDeny=true"
+      - "traefik.http.middlewares.basic-secure.headers.sslRedirect=true"
 
-      # Middleware: Secure Headers
-      - "traefik.http.middlewares.secure-headers.headers.customBrowserXSSValue=0"
-      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
-      - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
-      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
-      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
-      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
-      - "traefik.http.middlewares.secure-headers.headers.contentSecurityPolicy=default-src 'self'"
-      - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+      # # Middleware: Secure Headers
+      # - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      # - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
+      # - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
+      # - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      # - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      # - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
+      # - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
+      # - "traefik.http.middlewares.secure-headers.headers.contentSecurityPolicy=default-src 'self'"
+      # - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
 
 secrets:
   cf-token:
@@ -86,3 +91,4 @@ secrets:
 networks:
   proxy:
     external: true
+
