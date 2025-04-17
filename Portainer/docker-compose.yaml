@@ -1,0 +1,37 @@
+# Depends on Traefik proxy. See Traefikv3
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP Router: Redirect to HTTPS
+      - "traefik.http.routers.portainer.entrypoints=web"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.crispychrisprivserver.org`)"
+      - "traefik.http.routers.portainer.middlewares=redirect-to-https"
+
+      # HTTPS Router
+      - "traefik.http.routers.portainer-secure.entrypoints=websecure"
+      - "traefik.http.routers.portainer-secure.rule=Host(`portainer.crispychrisprivserver.org`)"
+      - "traefik.http.routers.portainer-secure.tls=true"
+      - "traefik.http.routers.portainer-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.portainer-secure.middlewares=secure-headers"
+      - "traefik.http.routers.portainer-secure.service=portainer-service"
+
+      # Backend Service Port
+      - "traefik.http.services.portainer-service.loadbalancer.server.port=9000"
+
+volumes:
+  portainer_data:
+
+networks:
+  proxy:
+    external: true
