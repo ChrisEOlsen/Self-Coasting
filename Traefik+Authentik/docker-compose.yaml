@@ -1,0 +1,199 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - --api.dashboard=true
+      - --api.debug=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cloudflare.acme.email=${CF_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.0.0.1:53
+      - --serversTransport.insecureSkipVerify=true
+      - --log.level=DEBUG
+      - --log.filePath=/var/log/traefik/traefik.log
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CLOUDFLARE_DNS_API_TOKEN_FILE=/run/secrets/cf-token
+      - CF_EMAIL=${CF_EMAIL}
+      - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS}
+    secrets:
+      - cf-token
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./logs:/var/log/traefik
+      - ./acme.json:/letsencrypt/acme.json
+    networks:
+      - proxy
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+
+      # HTTP Router – redirect HTTP to HTTPS
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.crispychrisprivserver.org`)"
+      - "traefik.http.routers.traefik.middlewares=redirect-to-https"
+
+      # HTTPS Router – secured via Authentik and with secure headers
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.crispychrisprivserver.org`)"
+      - "traefik.http.routers.traefik-secure.middlewares=authentik,secure-headers"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=crispychrisprivserver.org"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.crispychrisprivserver.org"
+
+      # Middleware: Redirect HTTP → HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # Middleware: ForwardAuth to Authentik (embedded outpost via authentik-server)
+      - "traefik.http.middlewares.authentik.forwardauth.address=http://authentik-server:9000/outpost.goauthentik.io/auth/traefik"
+      - "traefik.http.middlewares.authentik.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authentik.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-entitlements,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version"
+
+      # Middleware: Secure Headers
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
+      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
+      - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2025.2.4
+    container_name: authentik-server
+    command: server
+    restart: unless-stopped
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+    env_file:
+      - .env
+    volumes:
+      - ./media:/media
+      - ./custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP Router – redirect to HTTPS
+      - "traefik.http.routers.authentik.entrypoints=web"
+      - "traefik.http.routers.authentik.rule=Host(`authentik.crispychrisprivserver.org`)"
+      - "traefik.http.routers.authentik.middlewares=redirect-to-https"
+
+      # HTTPS Router
+      - "traefik.http.routers.authentik-secure.entrypoints=websecure"
+      - "traefik.http.routers.authentik-secure.rule=Host(`authentik.crispychrisprivserver.org`)"
+      - "traefik.http.routers.authentik-secure.tls=true"
+      - "traefik.http.routers.authentik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.authentik-secure.service=authentik-service"
+      - "traefik.http.routers.authentik-secure.middlewares=secure-headers"
+      - "traefik.http.services.authentik-service.loadbalancer.server.port=9000"
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2025.2.4
+    container_name: authentik-worker
+    command: worker
+    restart: unless-stopped
+    user: root
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./media:/media
+      - ./certs:/certs
+      - ./custom-templates:/templates
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - proxy
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: authentik-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_DB: ${PG_DB:-authentik}
+    env_file:
+      - .env
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    networks:
+      - proxy
+
+  redis:
+    image: redis:alpine
+    container_name: authentik-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    networks:
+      - proxy
+
+secrets:
+  cf-token:
+    file: ./cf-token
+
+volumes:
+  database:
+    driver: local
+  redis:
+    driver: local
+
+networks:
+  proxy:
+    external: true
