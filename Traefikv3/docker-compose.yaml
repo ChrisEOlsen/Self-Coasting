@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   traefik:
     image: traefik:latest
@@ -54,7 +52,7 @@ services:
       # HTTPS router – protected + full TLS config
       - "traefik.http.routers.traefik-secure.entrypoints=websecure"
       - "traefik.http.routers.traefik-secure.rule=Host(`traefik.crispychrisprivserver.org`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth,secure-headers"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth, basic-secure"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
