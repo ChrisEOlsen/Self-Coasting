@@ -52,7 +52,7 @@ services:
       # HTTPS router – protected + full TLS config
       - "traefik.http.routers.traefik-secure.entrypoints=websecure"
       - "traefik.http.routers.traefik-secure.rule=Host(`traefik.crispychrisprivserver.org`)"
-      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth, basic-secure"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth, secure-headers"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
@@ -65,22 +65,21 @@ services:
       # Middleware: Basic Auth
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
       
-      # Middleware: Basic Headers
-      - "traefik.http.middlewares.basic-secure.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.basic-secure.headers.referrerPolicy=strict-origin-when-cross-origin"
-      - "traefik.http.middlewares.basic-secure.headers.frameDeny=true"
-      - "traefik.http.middlewares.basic-secure.headers.sslRedirect=true"
+      # # Middleware: Basic Headers
+      # - "traefik.http.middlewares.basic-secure.headers.contentTypeNosniff=true"
+      # - "traefik.http.middlewares.basic-secure.headers.referrerPolicy=strict-origin-when-cross-origin"
+      # - "traefik.http.middlewares.basic-secure.headers.frameDeny=true"
+      # - "traefik.http.middlewares.basic-secure.headers.sslRedirect=true"
 
       # # Middleware: Secure Headers
-      # - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
-      # - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
-      # - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
-      # - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
-      # - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
-      # - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
-      # - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
-      # - "traefik.http.middlewares.secure-headers.headers.contentSecurityPolicy=default-src 'self'"
-      # - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.secure-headers.headers.frameDeny=false"
+      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=3153600"
+      - "traefik.http.middlewares.secure-headers.headers.customRequestHeaders.X-Forwarded-Proto=https"
 
 secrets:
   cf-token:
