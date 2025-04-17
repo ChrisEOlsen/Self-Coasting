@@ -22,7 +22,7 @@ docker network create proxy
       - "traefik.http.routers.whoami-secure.rule=Host(`whoami.crispychrisprivserver.org`)"
       - "traefik.http.routers.whoami-secure.tls=true"
       - "traefik.http.routers.whoami-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.whoami-secure.middlewares=basic-secure"
+      - "traefik.http.routers.whoami-secure.middlewares=secure-headers"
       - "traefik.http.routers.whoami-secure.service=whoami-service"
 
       # Service
