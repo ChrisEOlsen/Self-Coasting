@@ -67,3 +67,8 @@ labels:
   # Service Port
   - "traefik.http.services.myapp-service.loadbalancer.server.port=YOUR_APP_PORT"
 ```
+
+
+# Adding applications that aleady have authentication built in, but still want Authentik? 
+Create an OAuth Provider instead of a Proxy provider. Most appliations (like portainer) offer a custom OAuth Provider tab where you can configure this.<br/>
+OR, you could just go with their built in login flow...
