@@ -158,7 +158,7 @@ services:
     env_file:
       - .env
     volumes:
-      - database:/var/lib/postgresql/data
+      - ./volumes/database:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       start_period: 20s
@@ -174,7 +174,7 @@ services:
     command: --save 60 1 --loglevel warning
     restart: unless-stopped
     volumes:
-      - redis:/data
+      - ./volumes/redis:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       start_period: 20s
@@ -188,12 +188,7 @@ secrets:
   cf-token:
     file: ./cf-token
 
-volumes:
-  database:
-    driver: local
-  redis:
-    driver: local
-
 networks:
   proxy:
     external: true
+

@@ -27,8 +27,6 @@ services:
       # Service Port
       - "traefik.http.services.portainer-service.loadbalancer.server.port=9000"
 
-volumes:
-  portainer_data:
 
 networks:
   proxy:
