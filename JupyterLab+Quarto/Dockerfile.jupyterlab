@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────
+#  JupyterLab + Quarto image
+# ─────────────────────────────────────────────────────────────
+FROM quay.io/jupyter/base-notebook:python-3.11
+
+USER root
+
+# Install curl + Quarto CLI + a minimal TeX tool‑chain for PDF
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    curl -fsSL https://quarto.org/download/latest/quarto-linux-amd64.deb -o /tmp/quarto.deb && \
+    apt-get install -y /tmp/quarto.deb && \
+    rm /tmp/quarto.deb && \
+    apt-get install -y --no-install-recommends texlive-latex-base && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+USER ${NB_UID}
+
+RUN pip install --no-cache-dir jupyterlab-quarto==0.2.*

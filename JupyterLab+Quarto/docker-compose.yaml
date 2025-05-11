@@ -1,0 +1,54 @@
+services:
+  jupyterlab:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyterlab        # see the Dockerfile snippet below
+    image: selfhost/jupyterlab-quarto:latest
+    container_name: jupyterlab
+    restart: unless-stopped
+
+    command: >
+      start-notebook.py
+      --NotebookApp.token=''
+      --NotebookApp.password=''
+      --ServerApp.root_dir=/home/jovyan
+
+    # Jupyter config
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      # Disable token auth – Traefik + Authentik protects the route
+      - JUPYTER_TOKEN=
+      # Change UID/GID if you want files owned by a specific host user
+      - NB_UID=1000
+      - NB_GID=1000
+
+    volumes:
+      - ./jupyter-home:/home/jovyan
+
+    networks:
+      - proxy         # <─ Traefik lives here
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+      # HTTP Router – redirect to HTTPS
+      - "traefik.http.routers.jupyterlab.entrypoints=web"
+      - "traefik.http.routers.jupyterlab.rule=Host(`jupyterlab.crispychrisprivserver.org`)"
+      - "traefik.http.routers.jupyterlab.middlewares=redirect-to-https"
+
+      # HTTPS Router – secured by Authentik + secure headers
+      - "traefik.http.routers.jupyterlab-secure.entrypoints=websecure"
+      - "traefik.http.routers.jupyterlab-secure.rule=Host(`jupyterlab.crispychrisprivserver.org`)"
+      - "traefik.http.routers.jupyterlab-secure.tls=true"
+      - "traefik.http.routers.jupyterlab-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.jupyterlab-secure.middlewares=authentik,secure-headers"
+      - "traefik.http.routers.jupyterlab-secure.service=jupyterlab-service"
+
+      # Service Port
+      - "traefik.http.services.jupyterlab-service.loadbalancer.server.port=8888"
+
+
+networks:
+  proxy:
+    external: true
