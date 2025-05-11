@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-#  JupyterLab + Quarto + Git + Lazygit + Docker CLI/Compose
+#  JupyterLab  + Git + Lazygit + Docker CLI/Compose
 # ─────────────────────────────────────────────────────────────
 FROM quay.io/jupyter/base-notebook:python-3.11
 
@@ -31,17 +31,12 @@ RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
       -o /usr/local/lib/docker/cli-plugins/docker-compose && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
-# ---------- Quarto CLI ----------
-RUN curl -fsSL https://quarto.org/download/latest/quarto-linux-amd64.deb -o /tmp/quarto.deb && \
-    apt-get update && apt-get install -y /tmp/quarto.deb && \
-    rm /tmp/quarto.deb && rm -rf /var/lib/apt/lists/*
 
 # Switch to jovyan
 USER ${NB_UID}
 
 # ---------- Python/JupyterLab extensions ----------
 RUN pip install --no-cache-dir \
-      jupyterlab-quarto==0.2.* \
       jupyterlab-vim
 
 # ---------- Generate SSH key (once per image build) ----------
