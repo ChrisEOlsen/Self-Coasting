@@ -1,19 +1,54 @@
 # ─────────────────────────────────────────────────────────────
-#  JupyterLab + Quarto image
+#  JupyterLab + Quarto + Git + Lazygit + Docker CLI/Compose
 # ─────────────────────────────────────────────────────────────
 FROM quay.io/jupyter/base-notebook:python-3.11
 
 USER root
 
-# Install curl + Quarto CLI + a minimal TeX tool‑chain for PDF
+# Basic build tools & curl
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    curl -fsSL https://quarto.org/download/latest/quarto-linux-amd64.deb -o /tmp/quarto.deb && \
-    apt-get install -y /tmp/quarto.deb && \
-    rm /tmp/quarto.deb && \
-    apt-get install -y --no-install-recommends texlive-latex-base && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        git openssh-client curl ca-certificates \
+        texlive-latex-base unzip && \
+    rm -rf /var/lib/apt/lists/*
 
+# ---------- Lazygit ----------
+ARG LAZYGIT_VERSION=0.42.0
+RUN curl -fsSL \
+      https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz \
+    | tar xz -C /usr/local/bin lazygit
+
+# ---------- Stand‑alone Docker CLI + Compose v2 ----------
+ARG DOCKER_VERSION=25.0.5
+RUN curl -fsSL \
+      https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz \
+    | tar xz --strip-components=1 -C /usr/local/bin docker/docker
+
+ARG COMPOSE_VERSION=2.26.1
+RUN mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -fsSL \
+      https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-x86_64 \
+      -o /usr/local/lib/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# ---------- Quarto CLI ----------
+RUN curl -fsSL https://quarto.org/download/latest/quarto-linux-amd64.deb -o /tmp/quarto.deb && \
+    apt-get update && apt-get install -y /tmp/quarto.deb && \
+    rm /tmp/quarto.deb && rm -rf /var/lib/apt/lists/*
+
+# Switch to jovyan
 USER ${NB_UID}
 
-RUN pip install --no-cache-dir jupyterlab-quarto==0.2.*
+# ---------- Python/JupyterLab extensions ----------
+RUN pip install --no-cache-dir \
+      jupyterlab-quarto==0.2.* \
+      jupyterlab-vim
+
+# ---------- Generate SSH key (once per image build) ----------
+RUN mkdir -p ~/.ssh && \
+    ssh-keygen -q -t ed25519 -f ~/.ssh/id_ed25519 -N "" -C "jupyterlab" && \
+    chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_ed25519
+
+# Show the public key in logs on container start for easy copy‑paste
+CMD echo -e "\n💡  Add this SSH key to GitHub/GitLab:\n$(cat ~/.ssh/id_ed25519.pub)\n" && \
+    start-notebook.py --NotebookApp.token='' --NotebookApp.password='' --ServerApp.root_dir=/home/jovyan

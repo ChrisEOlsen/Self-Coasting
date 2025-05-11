@@ -2,31 +2,37 @@ services:
   jupyterlab:
     build:
       context: .
-      dockerfile: Dockerfile.jupyterlab        # see the Dockerfile snippet below
+      dockerfile: Dockerfile.jupyterlab
     image: selfhost/jupyterlab-quarto:latest
     container_name: jupyterlab
     restart: unless-stopped
 
-    command: >
-      start-notebook.py
-      --NotebookApp.token=''
-      --NotebookApp.password=''
-      --ServerApp.root_dir=/home/jovyan
+    command:
+      - start-notebook.py
+      - --NotebookApp.token=
+      - --NotebookApp.password=
+      - --ServerApp.root_dir=/home   # opens at top level
 
-    # Jupyter config
     environment:
       - JUPYTER_ENABLE_LAB=yes
-      # Disable token auth – Traefik + Authentik protects the route
-      - JUPYTER_TOKEN=
-      # Change UID/GID if you want files owned by a specific host user
       - NB_UID=1000
-      - NB_GID=1000
+      - NB_GID=100                 # keep in sync with host user
+      - DOCKER_GID=984 # pass host docker group id via .env if needed
 
     volumes:
+      # user notebooks / configs
       - ./jupyter-home:/home/jovyan
+      # host project trees (adjust host paths if different)
+      - /home/chris/repos:/home/chris/repos # This is an example of a folder on the host that you want to be able to edit from jupyter.
+      # give the container control of the host docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    # allow UID=1000 to talk to /var/run/docker.sock
+    group_add:
+      - "984"
 
     networks:
-      - proxy         # <─ Traefik lives here
+      - proxy
 
     labels:
       - "traefik.enable=true"
@@ -45,9 +51,8 @@ services:
       - "traefik.http.routers.jupyterlab-secure.middlewares=authentik,secure-headers"
       - "traefik.http.routers.jupyterlab-secure.service=jupyterlab-service"
 
-      # Service Port
+      # Service Port (internal 8888)
       - "traefik.http.services.jupyterlab-service.loadbalancer.server.port=8888"
-
 
 networks:
   proxy:
