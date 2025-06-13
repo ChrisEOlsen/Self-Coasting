@@ -1,0 +1,14 @@
+services: 
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - proxy
+
+
+networks:
+  proxy:
+    external: true
