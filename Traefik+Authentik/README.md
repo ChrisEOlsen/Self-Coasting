@@ -1,6 +1,6 @@
 ## Prerequisites
 - Domain for your server purchased on Cloudflare (or transferred from other provider like Namecheap).
-- Create a network called "proxy" for your traefik container and all other applications that need to be routed via a domain on your server.
+- Create a network called "proxy" for any application you want traefik to direct traffic to.
 ```bash
 docker network create proxy
 ```
