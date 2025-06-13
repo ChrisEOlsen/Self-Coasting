@@ -1,14 +1,14 @@
 services:
   ollama:
-    # Uncomment below for GPU support
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities:
-                - gpu
+    # Uncomment below for GPU support - ensure correct driver
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities:
+    #             - gpu
     volumes:
       - ./ollama:/root/.ollama
     # Uncomment below to expose Ollama API outside the container stack
@@ -19,8 +19,6 @@ services:
     tty: true
     restart: unless-stopped
     image: ollama/ollama:latest
-    #networks:
-    #  - ollama-network
 
 
   open-webui:
@@ -43,28 +41,7 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
-    #networks:
-    #  - ollama-network
-    #  - proxy
-    #labels:
-    #  - "traefik.enable=true"
-    #  - "traefik.docker.network=proxy"
-    #  - "traefik.http.routers.ollama.entrypoints=http"
-    #  - "traefik.http.routers.ollama.rule=Host(`ollama.crispychrisprivserver.org`)"
-    #  - "traefik.http.middlewares.ollama-https-redirect.redirectscheme.scheme=https"
-    #  - "traefik.http.routers.ollama.middlewares=ollama-https-redirect"
-    #  - "traefik.http.routers.ollama-secure.entrypoints=https"
-    #  - "traefik.http.routers.ollama-secure.rule=Host(`ollama.crispychrisprivserver.org`)"
-    #  - "traefik.http.routers.ollama-secure.tls=true"
-    #  - "traefik.http.routers.ollama-secure.tls.certresolver=cloudflare"
-    #  - "traefik.http.routers.ollama-secure.service=ollama"
-    #  - "traefik.http.services.ollama.loadbalancer.server.port=8080"
 
 volumes:
   ollama: {}
   open-webui: {}
-
-#networks:
-  #ollama-network:
-  #proxy:
-  #external: true
