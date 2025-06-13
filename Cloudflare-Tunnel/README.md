@@ -13,3 +13,6 @@ Then run the compose!
 ```bash
 docker compose up -d
 ```
+
+### Note
+Register a domain on cloudflare to add public hostnames for your application.
