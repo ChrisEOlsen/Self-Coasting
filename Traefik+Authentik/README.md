@@ -1,7 +1,29 @@
+## Prerequisites
+- Domain for your server purchased on Cloudflare (or transferred from other provider like Namecheap).
+- Create a network called "proxy" for your traefik container and all other applications that need to be routed via a domain on your server.
+```bash
+docker network create proxy
+```
+- Cloudflare tunnel running on the server. <br/>
+- Public hostnames added to cloudflare tunnel (best done via dashboard). <br/>
+NOTE: If running on docker-container, ensure that the tunnel is on a network "proxy", and that the public hostnames are pointing to https://traefik:443 instead of https://localhost:443. <br/>
+In addition, set <br/>
+**Additional Application Settings > TLS Origin Server Name**<br/>
+and <br/>
+**HTTP Settings > HTTP Host Header** <br/>
+to the full domain for those containers - traefik.yourdomain.com, authentik.yourdomain.com
+- Generate and add values for AUTHENTIK_SECRET_KEY and PG_PASS to .env
+```bash
+# 32 bytes → 64 hex characters
+openssl rand -hex 32
+# or  
+openssl rand -base64 48
+```
+
 ## Intial Setup
 Once docker containers are running and healthy <br/>
-Go to: http://authentik.your-domain.com/if/flow/initial-setup/ <br/>
-Create an admin account
+Go to: http://authentik.<your-domain.com>/if/flow/initial-setup/ <br/>
+Create an admin account <br/>
 
 You should be able to log in to the authentik dashboard at this stage, but not Traefik dashboard just yet.
 
@@ -21,7 +43,7 @@ If you just want the same authentication flow and group for every subdomain, cho
 Go to Applications > Outpost and click "edit" on the Default embedded outpost. <br />
 Find the application you just added (Traefik Dashboard) and add it to the outpost.<br />
 
-At this point you should be able to access the traefik dashboard with you admin credentials created with authentik.
+At this point you should be able to access the traefik dashboard with your admin credentials created with authentik.
 
 ## Labels for applications
 Protect and application connected to Traefik Proxy with Authentik:
@@ -31,12 +53,12 @@ labels:
 
 # HTTP Router – redirect to HTTPS
 - "traefik.http.routers.myapp.entrypoints=web"
-- "traefik.http.routers.myapp.rule=Host(`myapp.crispychrisprivserver.org`)"
+- "traefik.http.routers.myapp.rule=Host(`appname.yourdomain.com`)"
 - "traefik.http.routers.myapp.middlewares=redirect-to-https"
 
 # HTTPS Router – secured by Authentik + secure headers
 - "traefik.http.routers.myapp-secure.entrypoints=websecure"
-- "traefik.http.routers.myapp-secure.rule=Host(`myapp.crispychrisprivserver.org`)"
+- "traefik.http.routers.myapp-secure.rule=Host(`appname.yourdomain.com`)"
 - "traefik.http.routers.myapp-secure.tls=true"
 - "traefik.http.routers.myapp-secure.tls.certresolver=cloudflare"
 - "traefik.http.routers.myapp-secure.middlewares=authentik,secure-headers"
@@ -53,12 +75,12 @@ labels:
 
   # HTTP Router – redirect to HTTPS
   - "traefik.http.routers.myapp.entrypoints=web"
-  - "traefik.http.routers.myapp.rule=Host(`myapp.crispychrisprivserver.org`)"
+  - "traefik.http.routers.myapp.rule=Host(`www.yourapp.com`)"
   - "traefik.http.routers.myapp.middlewares=redirect-to-https"
 
   # HTTPS Router – secured with headers only
   - "traefik.http.routers.myapp-secure.entrypoints=websecure"
-  - "traefik.http.routers.myapp-secure.rule=Host(`myapp.crispychrisprivserver.org`)"
+  - "traefik.http.routers.myapp-secure.rule=Host(`www.yourapp.com`)"
   - "traefik.http.routers.myapp-secure.tls=true"
   - "traefik.http.routers.myapp-secure.tls.certresolver=cloudflare"
   - "traefik.http.routers.myapp-secure.middlewares=secure-headers" # No authentik here
@@ -71,4 +93,4 @@ labels:
 
 # Adding applications that aleady have authentication built in, but still want Authentik? 
 Create an OAuth Provider instead of a Proxy provider. Most appliations (like portainer) offer a custom OAuth Provider tab where you can configure this.<br/>
-OR, you could just go with their built in login flow...
+OR, you could just go with their built in login flow and the google chrome password manager...
