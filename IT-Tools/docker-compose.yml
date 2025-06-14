@@ -1,0 +1,32 @@
+services:
+    it-tools:
+        image: 'corentinth/it-tools:latest'
+        #ports:
+        #    - '8080:80'
+        restart: unless-stopped
+        container_name: it-tools
+        networks:
+          - proxy
+
+        labels:
+        - "traefik.enable=true"
+
+        # HTTP Router – redirect to HTTPS
+        - "traefik.http.routers.it-tools.entrypoints=web"
+        - "traefik.http.routers.it-tools.rule=Host(`it-tools.yourdomain.com`)"
+        - "traefik.http.routers.it-tools.middlewares=redirect-to-https"
+
+        # HTTPS Router – secured by Authentik + secure headers
+        - "traefik.http.routers.it-tools-secure.entrypoints=websecure"
+        - "traefik.http.routers.it-tools-secure.rule=Host(`it-tools.yourdomain.com`)"
+        - "traefik.http.routers.it-tools-secure.tls=true"
+        - "traefik.http.routers.it-tools-secure.tls.certresolver=cloudflare"
+        - "traefik.http.routers.it-tools-secure.middlewares=authentik,secure-headers"
+        - "traefik.http.routers.it-tools-secure.service=it-tools-service"
+
+        # Service Port
+        - "traefik.http.services.it-tools-service.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true
