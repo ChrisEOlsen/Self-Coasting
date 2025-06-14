@@ -5,3 +5,6 @@
 
 ### NOTE
 Ensure the public hostname in the docker compose is what you have registered in the cloudflare tunnel
+
+### Security
+PLEASE use your browsers password manager for this.
