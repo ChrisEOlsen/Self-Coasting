@@ -1,3 +1,6 @@
+## IMPORTANT
+This configuration disables the default login flow and assumes that you have Traefik+Authentik already installed and configured. 
+
 ## Configuration Checklist
 
 - [x] Make sure DOCKER_GID is correct. <br/>
