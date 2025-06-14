@@ -1,4 +1,5 @@
 ## Prerequisites
+- Installed Docker Engine
 - Domain for your server purchased on Cloudflare (or transferred from other provider like Namecheap).
 - Create a network called "proxy" for any application you want traefik to direct traffic to.
 ```bash
