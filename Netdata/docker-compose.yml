@@ -1,0 +1,51 @@
+services:
+  netdata:
+    image: netdata/netdata:latest
+    container_name: netdata
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    # ports:
+    #   - "19999:19999"  # Optional for local debug
+    volumes:
+      # Persistent data (state, DBs, alarms, metrics history)
+      - ./netdata/lib:/var/lib/netdata
+      - ./netdata/cache:/var/cache/netdata
+
+      # Host OS insights
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+
+      # Docker container monitoring
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DO_NOT_TRACK=1
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP Router – redirect to HTTPS
+      - "traefik.http.routers.netdata.entrypoints=web"
+      - "traefik.http.routers.netdata.rule=Host(`netdata.yourdomain.com`)"
+      - "traefik.http.routers.netdata.middlewares=redirect-to-https"
+
+      # HTTPS Router – Authentik secured
+      - "traefik.http.routers.netdata-secure.entrypoints=websecure"
+      - "traefik.http.routers.netdata-secure.rule=Host(`netdata.yourdomain.com`)"
+      - "traefik.http.routers.netdata-secure.tls=true"
+      - "traefik.http.routers.netdata-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.netdata-secure.middlewares=authentik,secure-headers"
+      - "traefik.http.routers.netdata-secure.service=netdata-service"
+
+      # Service Port
+      - "traefik.http.services.netdata-service.loadbalancer.server.port=19999"
+
+networks:
+  proxy:
+    external: true
