@@ -33,7 +33,7 @@ You should be able to log in to the authentik dashboard at this stage, but not T
 Go to: Applications > Applications and click "Create with Provider" <br/>
 Choose Proxy provider, pick an authorization flow (I suggest implicit for user friendly flow)<br/>
 Choose Forward Auth Single Application. <br/>
-Set the External URL to traefik.your-domain.com <br />
+Set the External URL to https://traefik.your-domain.com <br />
 I suggest binding a group like "Authentik Admins" <br /> 
 
 For each new application you will need to create a new provider if you want to maintain per-app access controls.<br />
