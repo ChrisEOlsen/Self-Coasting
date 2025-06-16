@@ -9,7 +9,8 @@
 
 # 🚀 Self-Hosted Applications
 
-> ⚠️ **NOTE:** Many of these services rely on the `Traefik+Authentik` stack for secure reverse proxying and authentication.
+> ⚠️ **NOTE:** Many of these services rely on the `Traefik+Authentik` stack for secure reverse proxying and authentication. A free Cloudflare account is necessary for these configurations to work right out of the gate. <br/>
+https://www.cloudflare.com/
 
 ---
 
