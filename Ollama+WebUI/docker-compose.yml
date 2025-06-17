@@ -1,0 +1,36 @@
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: open-webui
+    volumes:
+      - ./open-webui-data:/app/backend/data
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://100.108.149.124:11434  # ← desktop’s Tailscale IP - Only works when desktop is on of course
+      - WEBUI_SECRET_KEY
+    restart: unless-stopped
+    networks:
+      - proxy  
+    labels:
+      - "traefik.enable=true"
+
+      # Redirect HTTP → HTTPS
+      - "traefik.http.routers.llm.entrypoints=web"
+      - "traefik.http.routers.llm.rule=Host(`llm.crispychrisprivserver.org`)"
+      - "traefik.http.routers.llm.middlewares=redirect-to-https"
+
+      # HTTPS Router – Authentik + secure headers
+      - "traefik.http.routers.llm-secure.entrypoints=websecure"
+      - "traefik.http.routers.llm-secure.rule=Host(`llm.crispychrisprivserver.org`)"
+      - "traefik.http.routers.llm-secure.tls=true"
+      - "traefik.http.routers.llm-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.llm-secure.middlewares=authentik,secure-headers"
+      - "traefik.http.routers.llm-secure.service=llm-service"
+
+      # Internal service port
+      - "traefik.http.services.llm-service.loadbalancer.server.port=8080"
+
+networks:
+  proxy:
+    external: true

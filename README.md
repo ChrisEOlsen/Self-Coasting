@@ -55,7 +55,7 @@ https://www.cloudflare.com/
 
 ## 🧠 AI & LLMs
 
-- 🤖 **OpenWebUI + Ollama**  
+- 🤖 **Ollama+WebUI**  
   A sleek frontend for interacting with local LLMs like Gemma using Ollama as the runtime.
 
 ---
