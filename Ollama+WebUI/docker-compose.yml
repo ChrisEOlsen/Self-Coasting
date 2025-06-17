@@ -17,12 +17,12 @@ services:
 
       # Redirect HTTP → HTTPS
       - "traefik.http.routers.llm.entrypoints=web"
-      - "traefik.http.routers.llm.rule=Host(`llm.crispychrisprivserver.org`)"
+      - "traefik.http.routers.llm.rule=Host(`llm.yourdomain.com`)"
       - "traefik.http.routers.llm.middlewares=redirect-to-https"
 
       # HTTPS Router – Authentik + secure headers
       - "traefik.http.routers.llm-secure.entrypoints=websecure"
-      - "traefik.http.routers.llm-secure.rule=Host(`llm.crispychrisprivserver.org`)"
+      - "traefik.http.routers.llm-secure.rule=Host(`llm.yourdomain.com`)"
       - "traefik.http.routers.llm-secure.tls=true"
       - "traefik.http.routers.llm-secure.tls.certresolver=cloudflare"
       - "traefik.http.routers.llm-secure.middlewares=authentik,secure-headers"
