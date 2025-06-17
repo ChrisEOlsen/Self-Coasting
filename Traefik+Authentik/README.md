@@ -1,7 +1,3 @@
-Here is your complete `README.md` with the **Cloudflare API Token** section integrated in a natural location after the “Prerequisites” section, preserving all your original instructions while improving clarity and formatting slightly:
-
----
-
 # Traefik + Authentik Reverse Proxy Setup
 
 ## Prerequisites
@@ -22,6 +18,7 @@ If running your Cloudflare tunnel inside Docker, ensure:
  * The tunnel container is on the same `proxy` network
  * Your public hostnames route to `https://traefik:443` (not `localhost`)
  * In your tunnel settings:
+
    * `TLS Origin Server Name` = `traefik.yourdomain.com`
    * `HTTP Host Header` = full domain for each app (e.g. `authentik.yourdomain.com`)
 
