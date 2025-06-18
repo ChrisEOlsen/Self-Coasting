@@ -20,7 +20,6 @@ https://www.cloudflare.com/
 - 🤲 **Ollama+OpenHands**
   An AI assissted coding platform that can interact with local LLM's for full privacy and control.
 
----
 
 ---
 
