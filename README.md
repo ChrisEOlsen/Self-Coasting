@@ -12,6 +12,16 @@
 > ⚠️ **NOTE:** Many of these services rely on the `Traefik+Authentik` stack for secure reverse proxying and authentication. A free Cloudflare account is necessary for these configurations to work right out of the gate. <br/>
 https://www.cloudflare.com/
 
+## 🧠 AI & LLMs
+
+- 🤖 **Ollama+WebUI**  
+  A sleek frontend for interacting with local LLMs like Gemma using Ollama as the runtime.
+
+- 🤲 **Ollama+OpenHands**
+  An AI assissted coding platform that can interact with local LLM's for full privacy and control.
+
+---
+
 ---
 
 ## 🧩 Core Infrastructure
@@ -53,12 +63,6 @@ https://www.cloudflare.com/
 
 ---
 
-## 🧠 AI & LLMs
-
-- 🤖 **Ollama+WebUI**  
-  A sleek frontend for interacting with local LLMs like Gemma using Ollama as the runtime.
-
----
 
 ## 🎮 Games & Fun
 
