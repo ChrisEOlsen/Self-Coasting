@@ -5,4 +5,4 @@ After running the Ollama runtime on your GPU powered machine, you can use:
 ```bash
 ollama serve
 ```
-This will make the Ollama instance available at http://<ollama-machines-tailscale-ip>:11434 for any server that is also connected to your Tailscale account
+This will make the Ollama instance available at http://ollama-machines-tailscale-ip:11434 for any server that is also connected to your Tailscale account
