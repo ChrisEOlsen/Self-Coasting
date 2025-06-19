@@ -14,13 +14,13 @@ https://www.cloudflare.com/
 
 ## 🧠 AI & LLMs
 
-- **Ollama**
+- **Ollama**<br/>
   An app used to easily download and run local LLM's. See models available here: https://ollama.com/library
 
 - 🤖 **OpenWebUI**  
   A sleek frontend for interacting with local LLMs like Gemma using Ollama as the runtime. You can also add OpenAI API-Keys for pay as you go usage for enterprise models.
 
-- 🤲 **OpenHands**
+- 🤲 **OpenHands**<br/>
   An AI assissted coding platform that can interact with local LLM's for full privacy and control.
 
 ---
