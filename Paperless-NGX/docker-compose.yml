@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  paperless-redis:
+    image: redis:7
+    restart: unless-stopped
+    networks:
+      - proxy
+
+  paperless-db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: paperlesspass
+    volumes:
+      - ./paperless-db:/var/lib/postgresql/data
+    networks:
+      - proxy
+
+  paperless-webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - paperless-db
+      - paperless-redis
+    environment:
+      PAPERLESS_REDIS: redis://paperless-redis:6379
+      PAPERLESS_DBHOST: paperless-db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: paperlesspass
+      PAPERLESS_TIME_ZONE: America/New_York
+
+      # 🛡 Security & Stability
+      PAPERLESS_DISABLE_REGISTRATION: "false" # Optionally set to true once admin user is created.
+      PAPERLESS_ALLOWED_HOSTS: paperless.yourdomain.com
+      PAPERLESS_CSRF_TRUSTED_ORIGINS: https://paperless.yourdomain.com
+      PAPERLESS_COOKIE_SAMESITE: Lax
+      PAPERLESS_COOKIE_SECURE: "true"
+    networks:
+      - proxy
+    volumes:
+      - ./paperless-data:/usr/src/paperless/data
+      - ./paperless-media:/usr/src/paperless/media
+      - ./paperless-export:/usr/src/paperless/export
+      - ./paperless-consume:/usr/src/paperless/consume
+    labels:
+      - "traefik.enable=true"
+
+      # Redirect HTTP → HTTPS
+      - "traefik.http.routers.paperless.entrypoints=web"
+      - "traefik.http.routers.paperless.rule=Host(`paperless.yourdomain.com`)"
+      - "traefik.http.routers.paperless.middlewares=redirect-to-https"
+
+      # HTTPS Router – secure headers only (no Authentik)
+      - "traefik.http.routers.paperless-secure.entrypoints=websecure"
+      - "traefik.http.routers.paperless-secure.rule=Host(`paperless.yourdomain.com`)"
+      - "traefik.http.routers.paperless-secure.tls=true"
+      - "traefik.http.routers.paperless-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.paperless-secure.middlewares=secure-headers"
+      - "traefik.http.routers.paperless-secure.service=paperless-service"
+
+      # Internal service port
+      - "traefik.http.services.paperless-service.loadbalancer.server.port=8000"
+
+networks:
+  proxy:
+    external: true
