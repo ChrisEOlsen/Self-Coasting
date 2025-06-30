@@ -62,6 +62,9 @@ https://www.cloudflare.com/
 - 🧰 **IT-Tools**  
   A self-hosted collection of handy web utilities — encoders, hash generators, formatters, and more.
 
+- 🧑‍💻 **Neovim**
+  A simple yet effectvim minimalisitic neovim configuration with skeleton code keymaps for Nextjs and FastAPI
+
 ---
 
 
