@@ -50,7 +50,7 @@ https://www.cloudflare.com/
   Real-time performance monitoring and visualization for systems and applications.
 
 
-## 💾 **Gitea: Self-Hosted Git with Google Drive Backups**
+- 💾 **Gitea: Self-Hosted Git with Google Drive Backups**
   A private, full-featured Git service with automated daily backups — no limits, no vendor lock-in, better CI/CD integration.
 
 ---
