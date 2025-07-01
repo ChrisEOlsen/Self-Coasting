@@ -1,25 +1,27 @@
-# Self-Hosted Gitea + Rclone Backup Setup
+# 💾 **Self-Hosted Gitea + Google Drive Backups**
 
-This repo contains a production-ready self-hosted Gitea setup with:
+A fully self-contained Git platform on your own infrastructure with:
 
 * 🚀 Public access via Traefik + Cloudflare Tunnel
-* 🔑 Google OAuth login (optional)
-* 🧠 Rclone backups to Google Drive (daily + 7-day retention)
-* 🔒 Secure SSH-based Git push/pull using Tailscale
+* 🔐 Secure SSH pushes via Tailscale
+* ☁️ Daily backups to Google Drive via Rclone
+* ✅ Optional Google OAuth login
+* 🔄 No rate limits, great for CI/CD pipelines
 
 ---
 
 ## ✅ Prerequisites
 
-Ensure the following infrastructure is already configured:
+Before you begin, ensure you have the following working:
 
-1. **Traefik v3** reverse-proxying traffic with dynamic labels.
-2. **Cloudflare Tunnel** exposing Gitea (e.g. `gitea.yourdomain.com`).
-3. **Tailscale** active on your dev machine and home server.
+1. **Traefik v3** configured to proxy Docker containers via labels
+2. **Cloudflare Tunnel** exposing Gitea (e.g. `gitea.yourdomain.com`)
+3. **Tailscale** active on both your dev machine and home server
+4. (Optional) Google Cloud project with **Drive API** enabled
 
 ---
 
-## 📁 Repo Structure
+## 📁 Directory Layout
 
 ```
 server/
@@ -29,178 +31,201 @@ server/
 │   ├── rclone/                  # Contains rclone.conf
 │   ├── backups/                 # Backup destination
 │   ├── scripts/
-│   │   └── backup.sh            # Automated backup script
-│   ├── docker-compose.yml       # Main service definition
-│   └── .env                     # Secure environment secrets
+│   │   └── backup.sh            # Automated backup script (chmod +x!)
+│   ├── docker-compose.yml       # All services
+│   └── .env                     # Secrets and DB credentials
 ```
 
 ---
 
-## 🔧 Step-by-Step Setup
+## 🛠 Setup Instructions
 
-### 1. Clone & Configure
+### 1. Clone and Configure
 
 ```bash
 git clone git@github.com:YourUser/Self-Coasting.git
 cd server/gitea
 ```
 
-Update `.env` with strong secure values:
+Edit your `.env`:
 
 ```env
 POSTGRES_USER=gitea
-POSTGRES_PASSWORD=your_strong_db_password
+POSTGRES_PASSWORD=your_secure_pw
 GITEA_DB_USER=gitea
-GITEA_DB_PASSWORD=your_strong_db_password
-PGPASSWORD=your_strong_db_password
+GITEA_DB_PASSWORD=your_secure_pw
+PGPASSWORD=your_secure_pw
 ```
 
 ---
 
-### 2. Generate `rclone.conf`
+### 2. Setup `rclone.conf`
 
-On a browser-enabled machine (e.g., your desktop):
+On any GUI-capable machine:
 
 ```bash
 rclone config
 ```
 
-Steps:
+When prompted:
 
-* New remote: `G-Drive`
-* Type: `drive`
-* Scope: `1` (full access)
-* Use default client ID or create your own (recommended)
-* Follow the authorization flow
-* Save the resulting `rclone.conf` to `./rclone/rclone.conf`
+* **New remote name**: `G-Drive`
+* **Type**: `drive`
+* **Scope**: `1` (full access)
+* **Client ID/Secret**: *press Enter to use default or set your own*
+* **Follow the browser auth flow**
+* **Test user**: add your Gmail if asked
+* **Save the config**
+
+Copy the generated `rclone.conf` to:
+
+```bash
+cp ~/.config/rclone/rclone.conf ./rclone/rclone.conf
+```
 
 ---
 
-### 3. Make the Backup Script Executable
+### 3. Make the Script Executable
 
 ```bash
 chmod +x scripts/backup.sh
 ```
 
+This is required for the backup container to run correctly.
+
 ---
 
-### 4. Deploy
+### 4. Deploy Gitea
 
 ```bash
 docker compose up -d
 ```
 
-Then visit:
+Visit your domain:
 
 ```
 https://gitea.yourdomain.com
 ```
 
-Complete the **web installer** using:
+Go through the **web installer**, using:
 
 * DB Type: Postgres
 * DB User/Pass: from `.env`
-* Admin account: your credentials
+* Set your initial admin user
 
 ---
 
 ### 5. 🔐 Disable Public Registration
 
-Once logged in:
+After logging in:
 
 1. Go to ⚙️ **Site Admin → Configuration**
-
-2. Scroll to `[service]` and set:
+2. Find the `[service]` section
+3. Set:
 
    * `DISABLE_REGISTRATION = true`
    * `REQUIRE_SIGNIN_VIEW = true`
-
-3. Save and restart Gitea:
+4. Restart Gitea:
 
 ```bash
 docker compose restart gitea
 ```
 
-You can also edit `gitea/conf/app.ini` directly and restart.
-
 ---
 
-### 6. 🔑 (Optional) Google OAuth Login
+### 6. (Optional) Google OAuth Login
 
-1. Go to: [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Create new OAuth 2.0 Credentials
+This is *optional*, and setup is minimal:
 
-   * Authorized Redirect URI:
-     `https://gitea.yourdomain.com/user/oauth2/google/callback`
-3. Copy `Client ID` and `Client Secret`
-4. In Gitea:
+1. In [Google Cloud Console](https://console.cloud.google.com):
 
-   * Site Admin → Authentication Sources → Add OAuth2
-   * Name: `Google`
+   * Create a project
+   * Enable **Google Drive API**
+   * Go to OAuth Credentials → Create OAuth client ID
+   * Application type: Web
+   * Set it to **External** access
+   * Add your test Gmail account
+
+> ✅ *No redirect URI or approval required when using default rclone auth flow or Gitea's basic OAuth*
+
+2. In Gitea → Site Admin → Authentication Sources → Add OAuth2:
+
    * Provider: `Google`
-   * Fill in Client ID / Secret
-   * Enable Auto-register if desired
+   * Add Client ID / Secret
+   * Enable auto-registration if desired
 
 ---
 
-### 7. 🧪 Push Code via SSH + Tailscale
+### 7. 🧪 Use SSH for Pushing Code
 
-#### On your dev machine:
-
-1. Ensure Tailscale is active and connected
-2. Generate an SSH key (if needed):
+On your dev machine:
 
 ```bash
 ssh-keygen -t ed25519 -C "you@example.com"
 ```
 
-3. Add your **public key** to Gitea:
-   Profile → Settings → SSH/GPG Keys → Add Key
+1. Add the public key to:
 
-4. Set up your remote:
+   * **Gitea → Profile → Settings → SSH/GPG Keys**
+
+2. In your repo:
 
 ```bash
-git remote add gitea ssh://git@<your-server-tailscale-domain>:2222/youruser/repo.git
+git remote add gitea ssh://git@<tailscale-hostname>:2222/youruser/repo.git
 git push -u gitea main
 ```
 
 ---
 
-### 8. 🛡️ Enable 2FA
+### 8. ☁️ Backup Behavior
 
-For extra security:
+The `rclone-backup` container runs the `scripts/backup.sh` script every 24h:
 
-* Go to: Profile → Settings → Security
-* Enable 2FA
-* Use your preferred app (Apple Passwords, Bitwarden, etc.)
+* Dumps PostgreSQL to `gitea-db.sql`
 
----
+* Archives `/data` as `gitea-data.tar.gz`
 
-### 9. ☁️ Backup Behavior
+* Uploads both to:
 
-The `rclone-backup` container:
+  ```
+  G-Drive:gitea-backups/<timestamp>/
+  ```
 
-* Runs `scripts/backup.sh` every 24h
-* Archives:
-
-  * PostgreSQL DB
-  * Gitea data
-* Uploads to: `G-Drive:gitea-backups/<timestamp>/`
-* Deletes backups older than **7 days** (both locally and in GDrive)
-
-To modify retention or behavior, edit `scripts/backup.sh`.
+* Automatically **cleans up old backups >7 days** (both local & remote)
 
 ---
 
-## 🎁 Extras
+## 🔄 How to Restore
 
-* Want to share a repo?
+If disaster strikes:
 
-  * Go to Repo → Settings → Make Public ✅
-* Want to share privately?
+1. Restore the original directory layout from backup
+2. Update `.env` with a *new password* if needed
+3. Start just the DB:
 
-  * Create a user → Force password change
-  * Grant repo access manually
+```bash
+docker compose up -d db
+```
+
+4. Restore:
+
+```bash
+docker exec -i gitea-db psql -U gitea gitea < /backups/<timestamp>/gitea-db.sql
+```
+
+5. Restart everything:
+
+```bash
+docker compose up -d
+```
 
 ---
+
+## 🔚 Summary
+
+**Why use this setup?**
+
+* Full control over your Git server
+* Private, rate-limit free, and integrates seamlessly with CI/CD
+* Daily offsite backups for peace of mind
 
