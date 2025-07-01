@@ -49,8 +49,9 @@ https://www.cloudflare.com/
 - 📊 **Netdata**  
   Real-time performance monitoring and visualization for systems and applications.
 
-- 🔄 **GitSync**  
-  Keeps your Git repositories synchronized across machines, great for automation and backups.
+
+## 💾 **Gitea: Self-Hosted Git with Google Drive Backups**
+  A private, full-featured Git service with automated daily backups — no limits, no vendor lock-in, better CI/CD integration.
 
 ---
 
