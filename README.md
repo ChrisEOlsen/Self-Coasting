@@ -53,6 +53,9 @@ https://www.cloudflare.com/
 - 💾 **Gitea: Self-Hosted Git with Google Drive Backups**<br>
   A private, full-featured Git service with automated daily backups — no limits, no vendor lock-in, better CI/CD integration.
 
+- 📀 **rclone: Server wide backups to Google Drive** <br>
+    A simle way to backup all of your servers data straight into Google Drive!
+
 ---
 
 ## 👨‍💻 Development Tools

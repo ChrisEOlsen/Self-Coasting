@@ -1,0 +1,13 @@
+services:
+  server-wide-backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: server-wide-backup
+    restart: unless-stopped
+    volumes:
+      - ./backups:/backups
+      - ./rclone:/config/rclone
+      - ./scripts:/scripts:ro
+      - /home/chris/server:/mnt/server:ro 
+
