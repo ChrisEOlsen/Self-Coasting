@@ -1,0 +1,33 @@
+services:
+  vaultwarden:
+    container_name: vaultwarden
+    image: vaultwarden/server:latest
+    volumes:
+      - ./vaultwarden/:/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+
+      # Redirect HTTP → HTTPS
+      - "traefik.http.routers.vaultwarden.entrypoints=web"
+      - "traefik.http.routers.vaultwarden.rule=Host(`vault.yourdomain.com`)"
+      - "traefik.http.routers.vaultwarden.middlewares=redirect-to-https"
+
+      # HTTPS Router – secure headers only
+      - "traefik.http.routers.vaultwarden-secure.entrypoints=websecure"
+      - "traefik.http.routers.vaultwarden-secure.rule=Host(`vault.yourdomain.com`)"
+      - "traefik.http.routers.vaultwarden-secure.tls=true"
+      - "traefik.http.routers.vaultwarden-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.vaultwarden-secure.middlewares=secure-headers"
+      - "traefik.http.routers.vaultwarden-secure.service=vaultwarden-service"
+
+      # Internal service port
+      - "traefik.http.services.vaultwarden-service.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true

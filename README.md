@@ -81,4 +81,7 @@ https://www.cloudflare.com/
 - 📦 **Enclosed**  
   A self-hosted app for creating one-time secret message links — great for secure sharing.
 
+- 🔒 **Vaultwarden** <br>
+    A self hosted Bitwarden cloud.
+
 ---
