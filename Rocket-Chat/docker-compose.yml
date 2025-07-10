@@ -1,0 +1,56 @@
+services:
+  rocketchat:
+    image: "${IMAGE}:${RELEASE}"
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URL: "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/${MONGODB_DATABASE}?authSource=${MONGODB_DATABASE}&replicaSet=${MONGODB_REPLICA_SET_NAME}&directConnection=true"
+      MONGO_OPLOG_URL: "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@mongodb:27017/local?authSource=${MONGODB_DATABASE}&replicaSet=${MONGODB_REPLICA_SET_NAME}&directConnection=true"
+      ROOT_URL: "${ROOT_URL}"
+      MAIL_URL: "${MAIL_URL}"
+      PORT: "${PORT}"
+      DEPLOY_METHOD: "${DEPLOY_METHOD}"
+      DEPLOY_PLATFORM: "${DEPLOY_PLATFORM}"
+      REG_TOKEN: "${REG_TOKEN}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.rocketchat-http.entrypoints=web"
+      - "traefik.http.routers.rocketchat-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.rocketchat-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.rocketchat.entrypoints=websecure"
+      - "traefik.http.routers.rocketchat.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.rocketchat.tls=true"
+      - "traefik.http.routers.rocketchat.tls.certresolver=cloudflare"
+      - "traefik.http.routers.rocketchat.middlewares=secure-headers"
+      - "traefik.http.routers.rocketchat.service=rocketchat-service"
+      - "traefik.http.services.rocketchat-service.loadbalancer.server.port=${PORT}"
+    networks:
+      - proxy
+      - backend
+
+  mongodb:
+    image: "docker.io/bitnami/mongodb:${MONGODB_VERSION}"
+    restart: always
+    volumes:
+      - "./mongodb_data:/bitnami/mongodb"
+      - "./init-replica.js:/docker-entrypoint-initdb.d/init-replica.js:ro"
+    environment:
+      MONGODB_REPLICA_SET_MODE: "primary"
+      MONGODB_REPLICA_SET_NAME: "${MONGODB_REPLICA_SET_NAME}"
+      MONGODB_ADVERTISED_HOSTNAME: "mongodb"
+      MONGODB_ROOT_PASSWORD: "${MONGODB_ROOT_PASSWORD}"
+      MONGODB_REPLICA_SET_KEY: "${MONGODB_REPLICA_SET_KEY}"
+      ALLOW_EMPTY_PASSWORD: "${ALLOW_EMPTY_PASSWORD}"
+      MONGODB_USERNAME: "${MONGODB_USERNAME}"
+      MONGODB_PASSWORD: "${MONGODB_PASSWORD}"
+      MONGODB_DATABASE: "${MONGODB_DATABASE}"
+    networks:
+      - backend
+
+networks:
+  proxy:
+    external: true
+  backend:
+    driver: bridge
