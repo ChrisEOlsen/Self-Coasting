@@ -188,7 +188,3 @@ If an app already handles authentication (like **Portainer**), but you still wan
 
 ---
 
-```
-
-Let me know if you'd like to split this into multiple `.md` files for clarity (e.g. `docs/cloudflare.md`, `docs/authentik.md`) or generate a `.env.template`.
-```
