@@ -6,18 +6,18 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.myapp.entrypoints=web"
-      - "traefik.http.routers.myapp.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.myapp.middlewares=redirect-to-https"
-      - "traefik.http.routers.myapp-secure.entrypoints=websecure"
-      - "traefik.http.routers.myapp-secure.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.myapp-secure.tls=true"
-      - "traefik.http.routers.myapp-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.myapp-secure.middlewares=secure-headers"
-      - "traefik.http.routers.myapp-secure.service=myapp-service"
+      - "traefik.http.routers.n8n.entrypoints=web"
+      - "traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.n8n.middlewares=redirect-to-https"
+      - "traefik.http.routers.n8n-secure.entrypoints=websecure"
+      - "traefik.http.routers.n8n-secure.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.n8n-secure.tls=true"
+      - "traefik.http.routers.n8n-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.n8n-secure.middlewares=secure-headers"
+      - "traefik.http.routers.n8n-secure.service=n8n-service"
 
       # Internal service port
-      - "traefik.http.services.myapp-service.loadbalancer.server.port=5678"
+      - "traefik.http.services.n8n-service.loadbalancer.server.port=5678"
     environment:
       - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
       - N8N_PORT=5678
