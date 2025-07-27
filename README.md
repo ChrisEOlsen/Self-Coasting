@@ -23,6 +23,9 @@ https://www.cloudflare.com/
 - 🤲 **OpenHands**<br/>
   An AI assissted coding platform that can interact with local LLM's for full privacy and control.
 
+- 🎱 **n8n**<br/>
+  An automation platform with AI capabilities
+
 ---
 
 ## 🧩 Core Infrastructure
